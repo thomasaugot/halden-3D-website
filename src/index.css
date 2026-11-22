@@ -1,0 +1,201 @@
+@import "tailwindcss";
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/instrument-sans/index.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+/*
+  Halden palette
+  contrail   #eef2f6  daylight ground, night text
+  stratos    #0d1424  day text, night panels
+  haze       #4e5a6c  secondary text by day
+  mist       #a9b4c4  secondary text by night
+  cobalt     #2340c8  the livery colour, the only accent
+  cobalt-hi  #8fa2ff  the same accent lifted for dark sky
+*/
+
+:root {
+  --fg: #0d1424;
+  --fg-2: #4e5a6c;
+  --accent: #2340c8;
+  --accent-ink: #eef2f6;
+  --ground: #eef2f6;
+  --panel: #eef2f6;
+  --panel-fg: #0d1424;
+  --rule: rgb(13 20 36 / 0.16);
+  color-scheme: light;
+}
+
+:root[data-sky="night"] {
+  --fg: #eef2f6;
+  --fg-2: #a9b4c4;
+  --accent: #8fa2ff;
+  --accent-ink: #0d1424;
+  --ground: #0a0f1c;
+  --panel: #111a2e;
+  --panel-fg: #eef2f6;
+  --rule: rgb(238 242 246 / 0.18);
+  color-scheme: dark;
+}
+
+@theme {
+  --font-display: "Archivo Variable", ui-sans-serif, sans-serif;
+  --font-sans: "Instrument Sans Variable", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-contrail: #eef2f6;
+  --color-stratos: #0d1424;
+  --color-cobalt: #2340c8;
+  --color-cobalt-hi: #8fa2ff;
+  --color-mist: #a9b4c4;
+  --color-haze: #4e5a6c;
+  --ease-flight: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-ground: var(--ground);
+  --color-panel: var(--panel);
+  --color-panel-fg: var(--panel-fg);
+  --color-rule: var(--rule);
+}
+
+@layer base {
+  html {
+    background: var(--ground);
+    color: var(--fg);
+    transition: background-color 0.9s var(--ease-flight), color 0.9s var(--ease-flight);
+    -webkit-font-smoothing: antialiased;
+    scrollbar-color: var(--fg-2) transparent;
+    scrollbar-width: thin;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: transparent;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  input,
+  textarea,
+  select {
+    caret-color: var(--accent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* fields show focus with their own edge, never a ring */
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+  }
+
+  a {
+    text-underline-offset: 0.22em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+}
+
+/* Display voice: Archivo opened slightly wide, set light. Hierarchy comes from size, never from weight. */
+@utility font-wide {
+  font-family: var(--font-display);
+  font-stretch: 112%;
+  font-weight: 420;
+}
+
+/* type scale: the only text sizes on the page */
+@utility text-display-xl {
+  font-size: clamp(3.5rem, 9vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+}
+
+@utility text-display {
+  font-size: clamp(2.25rem, 4.4vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+@utility text-title {
+  font-size: clamp(1.5rem, 2.2vw, 2.125rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+@utility text-lede {
+  font-size: clamp(1.0625rem, 1.2vw, 1.1875rem);
+  line-height: 1.55;
+}
+
+@utility text-body {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+@utility text-small {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+@utility text-micro {
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+/* text panels inside pinned sections, switched by data-on */
+.beat {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition: opacity 0.7s var(--ease-flight), transform 0.9s var(--ease-flight);
+  pointer-events: none;
+}
+
+.beat[data-on="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* the field focus treatment: the bottom edge turns cobalt and thickens, the label follows */
+.field input,
+.field select {
+  border-bottom: 1px solid var(--rule);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.field input:focus,
+.field select:focus {
+  border-bottom-color: var(--accent);
+  box-shadow: 0 1px 0 0 var(--accent);
+}
+
+.field:focus-within .field-label {
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat {
+    transition: opacity 0.2s linear;
+    transform: none;
+  }
+  html {
+    transition: none;
+  }
+}
