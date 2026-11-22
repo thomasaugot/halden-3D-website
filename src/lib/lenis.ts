@@ -1,5 +1,5 @@
 import Lenis from 'lenis'
-import { gsap, ScrollTrigger } from './gsap'
+import { gsap, ScrollTrigger } from '@/lib/gsap'
 
 let lenis: Lenis | null = null
 

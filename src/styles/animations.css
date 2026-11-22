@@ -1,0 +1,13 @@
+/* text panels inside pinned sections, switched by data-on */
+.beat {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition: opacity 0.7s var(--ease-flight), transform 0.9s var(--ease-flight);
+  pointer-events: none;
+}
+
+.beat[data-on="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}

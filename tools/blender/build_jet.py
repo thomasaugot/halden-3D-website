@@ -5,7 +5,7 @@ Run headless:
 
 Blender axes: nose on +X, span on Y, up on Z. The glTF exporter turns Z-up
 into Y-up, so in three.js the nose stays on +X. Length is 30 units.
-Object names are read by src/scene/jet.ts: Fuselage, Window and Int_* open
+Object names are read by the H7 loader (since removed from the site): Fuselage, Window and Int_* open
 with the cabin cutaway, everything else never clips.
 """
 

@@ -1,0 +1,24 @@
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* fields show focus with their own edge, never a ring */
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat {
+    transition: opacity 0.2s linear;
+    transform: none;
+  }
+  html {
+    transition: none;
+  }
+}

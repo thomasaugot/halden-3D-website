@@ -1,12 +1,4 @@
-import type { SequenceManifest } from '../lib/FrameSequence'
-
-export type Cut = 'landscape' | 'portrait'
-
-export interface SequenceSet {
-  /** folder under public/ that holds the frames */
-  base: string
-  manifest: SequenceManifest
-}
+import type { Cut, SequenceManifest, SequenceSet } from '@/types/film'
 
 const cache = new Map<Cut, Promise<SequenceSet>>()
 
