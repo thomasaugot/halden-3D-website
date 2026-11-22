@@ -3,7 +3,8 @@ import { ScrollTrigger } from '../lib/gsap'
 import { FrameSequence, sequenceUrls } from '../lib/FrameSequence'
 import { Mark } from '../components/Mark'
 import { instrument } from '../scene/store'
-import { getSequenceManifest } from '../services/sequences'
+import { usePortrait } from '../lib/usePortrait'
+import { getSequenceSet } from '../services/sequences'
 
 /** The page lands: the final clip comes down over the lake and touches down in front of the Alps. */
 export function Footer() {
@@ -11,6 +12,7 @@ export function Footer() {
   const canvas = useRef<HTMLCanvasElement>(null)
   const fade = useRef<HTMLDivElement>(null)
   const sign = useRef<HTMLDivElement>(null)
+  const portrait = usePortrait()
 
   useEffect(() => {
     const el = section.current
@@ -20,9 +22,12 @@ export function Footer() {
     let st: ScrollTrigger | null = null
     let alive = true
 
-    getSequenceManifest().then((m) => {
+    getSequenceSet(portrait ? 'portrait' : 'landscape').then(({ manifest, base }) => {
       if (!alive) return
-      seq = new FrameSequence(cv, sequenceUrls(m, ['c6-landing']).urls, { focusX: 0.45 })
+      seq = new FrameSequence(cv, sequenceUrls(manifest, ['c6-landing'], base).urls, {
+        focusX: portrait ? 0.5 : 0.45,
+        fit: portrait && base === 'seq' ? 'frame' : 'cover',
+      })
       // load once the reader is getting close, not on first paint
       ScrollTrigger.create({ trigger: el, start: 'top 300%', once: true, onEnter: () => seq?.load() })
       st = ScrollTrigger.create({
@@ -43,7 +48,7 @@ export function Footer() {
       st?.kill()
       seq?.dispose()
     }
-  }, [])
+  }, [portrait])
 
   return (
     <footer id="landing" ref={section} className="relative h-[300svh]">

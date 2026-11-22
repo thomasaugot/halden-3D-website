@@ -50,8 +50,8 @@ export function Routes() {
       <div className="sticky top-0 h-svh overflow-hidden">
         <canvas ref={canvas} className="absolute inset-0 h-full w-full" aria-hidden="true" />
 
-        <div className="absolute inset-x-4 top-24 md:inset-x-auto md:top-1/2 md:left-10 md:w-[min(30rem,38vw)] md:-translate-y-1/2">
-          <h2 id="routes-title" className="font-wide text-display">
+        <div className="absolute inset-x-4 top-24 md:inset-x-10 wide:inset-x-auto wide:top-1/2 wide:left-10 wide:w-[min(30rem,38vw)] wide:-translate-y-1/2">
+          <h2 id="routes-title" className="max-w-[16ch] font-wide text-display">
             Fly anywhere from Geneva
           </h2>
           <p className="mt-4 max-w-[34ch] text-lede text-fg-2">Every city on this board is nonstop from Geneva, Tokyo included.</p>
@@ -80,7 +80,7 @@ export function Routes() {
             </dl>
           </div>
 
-          <ol className="mt-10 hidden md:block" aria-label="Destinations">
+          <ol className="mt-10 hidden wide:block" aria-label="Destinations">
             {ROUTES.map((route, k) => (
               <li
                 key={route.to.code}

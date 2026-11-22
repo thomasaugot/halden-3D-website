@@ -13,15 +13,20 @@ import json
 import os
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.request
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-RAW = os.path.join(ROOT, "tools", "video", "raw")
-SEQ = os.path.join(ROOT, "public", "seq")
+# --portrait builds the 9:16 cut used on screens taller than they are wide
+PORTRAIT = "--portrait" in sys.argv
+RAW = os.path.join(ROOT, "tools", "video", "raw-portrait" if PORTRAIT else "raw")
+SEQ = os.path.join(ROOT, "public", "seq-portrait" if PORTRAIT else "seq")
+ASPECT = "9:16" if PORTRAIT else "16:9"
 MODEL = "gemini-omni-1.2-flash"
 
 FPS = 15
-WIDTH = 1600
+WIDTH = 900 if PORTRAIT else 1600
 
 JET = (
     "a white long-range business jet with a cobalt blue T-tail, cobalt blue winglets, two engines mounted on "
@@ -31,6 +36,16 @@ CABIN = (
     "a private jet cabin with off-white quilted leather seats, dark walnut veneer, a deep navy carpet, brushed "
     "nickel trim and large oval windows"
 )
+# extra direction for the tall frame: the aircraft must fit inside it
+PORTRAIT_FRAMING = {
+    "c1-cabin": "Vertical frame: look straight down the aisle, the window fills the upper half before the camera passes through.",
+    "c2-flyby": "Vertical frame: the jet is seen from further away and slightly ahead, in a front three-quarter view, so the whole aircraft from nose to tail fits inside the frame with sky around it.",
+    "c3-orbit": "Vertical frame: keep the whole aircraft inside the frame while the camera arcs around it, nose to tail visible, ending on the forward fuselage and cabin windows.",
+    "c4-inside": "Vertical frame: look down the aisle, seats on both sides, ceiling and carpet visible.",
+    "c5-climb": "Vertical frame: the climbing jet is small in the middle of the tall frame, lots of sky above it and the cloud sea below.",
+    "c6-landing": "Vertical frame: the jet is seen from further away in a front three-quarter view so it fits the frame from nose to tail, the Alps above it and the runway below.",
+}
+
 STYLE = (
     "Photoreal, shot on a large-sensor cinema camera, natural light, crisp detail, one continuous shot with a "
     "smooth stabilised camera, no cuts, no text, no logos, no people."
@@ -109,19 +124,23 @@ def last_frame(name: str) -> str:
     return out
 
 
+def framing(name: str) -> str:
+    return f"{PORTRAIT_FRAMING[name]} " if PORTRAIT else ""
+
+
 def generate(name: str, key: str) -> None:
     clip = CLIPS[name]
     parts = []
     if "after" in clip:
         with open(last_frame(clip["after"]), "rb") as f:
             parts.append({"type": "image", "data": base64.b64encode(f.read()).decode(), "mime_type": "image/jpeg"})
-        parts.append({"type": "text", "text": f"Use the image as the exact first frame. {clip['prompt']} {STYLE}"})
+        parts.append({"type": "text", "text": f"Use the image as the exact first frame. {clip['prompt']} {framing(name)}{STYLE}"})
     else:
-        parts.append({"type": "text", "text": f"{clip['prompt']} {STYLE}"})
+        parts.append({"type": "text", "text": f"{clip['prompt']} {framing(name)}{STYLE}"})
     body = {
         "model": MODEL,
         "input": parts,
-        "response_format": {"type": "video", "aspect_ratio": "16:9", "resolution": "1080p", "duration": f"{clip['duration']}s"},
+        "response_format": {"type": "video", "aspect_ratio": ASPECT, "resolution": "1080p", "duration": f"{clip['duration']}s"},
     }
     raw = call(body, key)
     with open(os.path.join(RAW, f"{name}.mp4"), "wb") as f:
@@ -158,9 +177,18 @@ if __name__ == "__main__":
         sys.exit("GEMINI_API_KEY is not set")
     os.makedirs(RAW, exist_ok=True)
     os.makedirs(SEQ, exist_ok=True)
-    for n in sys.argv[1:] or list(CLIPS):
+    names = [a for a in sys.argv[1:] if not a.startswith("--")]
+    for n in names or list(CLIPS):
         try:
-            generate(n, key)
+            for attempt in range(6):
+                try:
+                    generate(n, key)
+                    break
+                except urllib.error.HTTPError as e:
+                    if e.code != 429 or attempt == 5:
+                        raise
+                    print(f"[chain] {n}: rate limited, retrying in 75 s", flush=True)
+                    time.sleep(75)
             print(f"[chain] {n}: {to_frames(n)} frames", flush=True)
         except Exception as e:
             print(f"[chain] {n} failed: {e}", flush=True)

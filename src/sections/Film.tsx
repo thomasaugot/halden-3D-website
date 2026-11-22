@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight } from '@phosphor-icons/react'
 import { ScrollTrigger } from '../lib/gsap'
-import { FrameSequence, sequenceUrls, type SequenceManifest } from '../lib/FrameSequence'
+import { FrameSequence, sequenceUrls } from '../lib/FrameSequence'
+import { usePortrait } from '../lib/usePortrait'
 import { scrollToId } from '../lib/lenis'
 import { instrument, loadProgress, sceneReady } from '../scene/store'
-import { getSequenceManifest } from '../services/sequences'
+import { getSequenceSet, type SequenceSet } from '../services/sequences'
 
 const CLIPS = ['c1-cabin', 'c2-flyby', 'c3-orbit', 'c4-inside', 'c5-climb'] as const
 type Clip = (typeof CLIPS)[number]
@@ -23,9 +24,9 @@ interface Beat {
 }
 
 const SPECS = [
-  { value: '13,000 km', label: 'Range, Geneva to Tokyo nonstop' },
-  { value: '15,500 m', label: 'Ceiling, above the airlines' },
-  { value: '19 seats', label: 'Or ten beds made up overnight' },
+  { value: '13,000\u00a0km', label: 'Range, Geneva to Tokyo nonstop' },
+  { value: '15,500\u00a0m', label: 'Ceiling, above the airlines' },
+  { value: '19\u00a0seats', label: 'Or ten beds made up overnight' },
 ]
 
 function Caption({ title, text, meta }: { title: string; text: string; meta?: string }) {
@@ -93,7 +94,7 @@ const BEATS: Beat[] = [
           {SPECS.map((s) => (
             <div key={s.value}>
               <dt className="font-mono text-micro text-contrail/65">{s.label}</dt>
-              <dd className="mt-2 font-wide text-title text-contrail">{s.value}</dd>
+              <dd className="mt-2 font-wide text-title whitespace-nowrap text-contrail">{s.value}</dd>
             </div>
           ))}
         </dl>
@@ -137,24 +138,27 @@ export function Film() {
   const veil = useRef<HTMLDivElement>(null)
   const beatRefs = useRef<(HTMLDivElement | null)[]>([])
   const anchorRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const [manifest, setManifest] = useState<SequenceManifest | null>(null)
+  const portrait = usePortrait()
+  const [set, setSet] = useState<SequenceSet | null>(null)
 
+  // tall screens get the 9:16 cut; rotating the device swaps the cut in place
   useEffect(() => {
     let alive = true
-    getSequenceManifest()
-      .then((m) => alive && setManifest(m))
+    getSequenceSet(portrait ? 'portrait' : 'landscape')
+      .then((s) => alive && setSet(s))
       .catch(() => sceneReady.set(true))
     return () => {
       alive = false
     }
-  }, [])
+  }, [portrait])
 
   useEffect(() => {
     const el = section.current
     const cv = canvas.current
-    if (!manifest || !el || !cv) return
+    if (!set || !el || !cv) return
+    const { manifest, base } = set
 
-    const { urls, bounds } = sequenceUrls(manifest, [...CLIPS])
+    const { urls, bounds } = sequenceUrls(manifest, [...CLIPS], base)
     const seconds = CLIPS.reduce((s, c) => s + (manifest[c]?.frames ?? 0) / (manifest[c]?.fps ?? 15), 0)
     el.style.height = `${Math.round(seconds * SVH_PER_SECOND + 100)}svh`
 
@@ -168,7 +172,7 @@ export function Film() {
     }
     const ranges = BEATS.map((b) => [at(b.clip, b.from), at(b.clip, b.to)] as const)
 
-    const seq = new FrameSequence(cv, urls)
+    const seq = new FrameSequence(cv, urls, { fit: portrait && base === 'seq' ? 'frame' : 'cover' })
     const firstPass = Math.min(urls.length, Math.ceil(urls.length / 16) + 4)
     seq.onProgress = (loaded) => {
       loadProgress.set(Math.min(1, loaded / firstPass))
@@ -213,7 +217,8 @@ export function Film() {
       st.kill()
       seq.dispose()
     }
-  }, [manifest])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [set])
 
   return (
     <section id="hero" ref={section} className="relative h-[3000svh]" aria-label="The flight">

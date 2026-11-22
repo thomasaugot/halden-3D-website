@@ -38,6 +38,9 @@
   color-scheme: dark;
 }
 
+/* wide: a landscape screen with room for side-by-side layouts; upright tablets stay stacked */
+@custom-variant wide (@media (min-width: 768px) and (min-aspect-ratio: 1/1));
+
 @theme {
   --font-display: "Archivo Variable", ui-sans-serif, sans-serif;
   --font-sans: "Instrument Sans Variable", ui-sans-serif, sans-serif;
